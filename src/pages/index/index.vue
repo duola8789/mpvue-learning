@@ -172,7 +172,6 @@ export default {
     height: 1000rpx;
     border: 1rpx solid black;
     box-sizing: border-box;
-    display: none;
     visibility: hidden;
   }
 </style>
