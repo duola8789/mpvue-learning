@@ -89,34 +89,43 @@ export default {
       const text = '义可就不一样了，表示最大需要换行的宽度，此参数可缺省，默认会使用canvas画布';
       this.fillTextWrap(ctx, text, left, 200, 190, 30);
 
-      // 绘制第二张图片
-      const imgPath2 = 'https://mmbiz.qpic.cn/mmbiz_jpg/DCI1x4FsN5q1Fxmq7L67l3jYQABcCAp7rPOXsebdcDhjruX83OvmC0tAWqJanUG3n0eJibOtNAq1gJJbBFkYfXw/640?wx_fmt=jpeg&tp=webp&wxfrom=5&wx_lazy=1';
-      ctx.drawImage(imgPath2, left, 320, 200, 150);
-
-      ctx.draw(false, function () {
-        wx.canvasToTempFilePath({
-          canvasId: 'myCanvas',
-          success: function(res) {
-            // 获得图片临时路径
-            self.filePath = res.tempFilePath;
-            wx.saveImageToPhotosAlbum({
-              filePath: self.filePath,
-              success(res) {
-                console.log(self.filePath);
-                wx.hideLoading();
-                wx.showToast({
-                  title: '图片保存成功',
-                  icon: 'success'
-                })
-              },
-              fail(res) {
-                console.log(res.errMsg);
-                wx.hideLoading();
-              },
-            })
-          }
-        })
-      });
+      // 绘制网络图片
+      const imgPath2 = 'https://mmbiz.qpic.cn/mmbiz_jpg/DCI1x4FsN5q1Fxmq7L67l3jYQABcCAp7rPOXsebdcDhjruX83OvmC0tAWqJanUG3n0eJibOtNAq1gJJbBFkYfXw/640';
+      console.log(123);
+       wx.getImageInfo({
+         src: imgPath2,
+         success(res) {
+           ctx.drawImage(res.path, left, 320, 200, 150);
+           // 全部绘制
+           ctx.draw(false, function () {
+             wx.canvasToTempFilePath({
+               canvasId: 'myCanvas',
+               success: function(res) {
+                 // 获得图片临时路径
+                 self.filePath = res.tempFilePath;
+                 wx.saveImageToPhotosAlbum({
+                   filePath: self.filePath,
+                   success(res) {
+                     console.log(self.filePath);
+                     wx.hideLoading();
+                     wx.showToast({
+                       title: '图片保存成功',
+                       icon: 'success'
+                     })
+                   },
+                   fail(res) {
+                     console.log(res.errMsg);
+                     wx.hideLoading();
+                   },
+                 })
+               }
+             })
+           });
+         },
+         fail(res) {
+           console.log(res)
+         }
+        });
     },
 
     // 文字换行
@@ -170,7 +179,6 @@ export default {
     top: 150rpx;
     width: 100%;
     height: 1000rpx;
-    border: 1rpx solid black;
     box-sizing: border-box;
     visibility: hidden;
   }
