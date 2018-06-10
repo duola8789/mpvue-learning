@@ -1,9 +1,8 @@
 <template>
   <div class="container">
-    <div class="wrapper">
-       <canvas canvas-id="myCanvas" style="width: 100%; height: 500px;"></canvas>
-    </div>
-    <button @click="share" class="button">share</button>
+    <canvas canvas-id="myCanvas" style="width: 100%; height: 500px;" class="test"></canvas>
+    <cover-view class="button" @click="share">share</cover-view>
+    <!--<button open-type="getUserInfo" lang="zh_CN" @getuserinfo="goShare">获取用户信息</button>-->
   </div>
 </template>
 
@@ -30,16 +29,33 @@ export default {
   mounted() {
     const self = this;
     self.isShow = true;
-
+    self.getCanvas();
   },
   methods: {
     share() {
+      console.log(1);
       const self = this;
       wx.showLoading({
         title: '图片生成中',
         mask: true
       });
       self.getCanvas();
+    },
+
+    goShare(e) {
+      // mpVue中获取detail
+      const detail = e.mp.detail;
+
+      // 如果用户拒接授权
+      if (!detail.userInfo) {
+        return;
+      }
+
+      // 用户信息
+      console.log(detail.userInfo);
+      wx.navigateTo({
+        url: `/pages/share/main?userInfo=${JSON.stringify(detail.userInfo)}`
+      })
     },
 
     // 生成Canvas
@@ -98,28 +114,29 @@ export default {
            ctx.drawImage(res.path, left, 320, 200, 150);
            // 全部绘制
            ctx.draw(false, function () {
-             wx.canvasToTempFilePath({
-               canvasId: 'myCanvas',
-               success: function(res) {
-                 // 获得图片临时路径
-                 self.filePath = res.tempFilePath;
-                 wx.saveImageToPhotosAlbum({
-                   filePath: self.filePath,
-                   success(res) {
-                     console.log(self.filePath);
-                     wx.hideLoading();
-                     wx.showToast({
-                       title: '图片保存成功',
-                       icon: 'success'
-                     })
-                   },
-                   fail(res) {
-                     console.log(res.errMsg);
-                     wx.hideLoading();
-                   },
-                 })
-               }
-             })
+             // wx.canvasToTempFilePath({
+             //   canvasId: 'myCanvas',
+             //   fileType: 'jpg',
+             //   success: function(res) {
+             //     // 获得图片临时路径
+             //     self.filePath = res.tempFilePath;
+             //     wx.saveImageToPhotosAlbum({
+             //       filePath: self.filePath,
+             //       success(res) {
+             //         console.log(self.filePath);
+             //         wx.hideLoading();
+             //         wx.showToast({
+             //           title: '图片保存成功',
+             //           icon: 'success'
+             //         })
+             //       },
+             //       fail(res) {
+             //         console.log(res.errMsg);
+             //         wx.hideLoading();
+             //       },
+             //     })
+             //   }
+             // })
            });
          },
          fail(res) {
@@ -170,16 +187,30 @@ export default {
 <style scoped>
   .button {
     margin-top: -200rpx;
+    position: fixed;
+    left: 0;
+    width: 100%;
+    background: red;
+    bottom: 300rpx;
+    z-index: 120;
+    text-align: center;
+  }
+  .button2 {
+    margin-top: 100rpx;
     padding: 10rpx 50rpx;
   }
   .wrapper {
     z-index: 10;
-    position: absolute;
+    position: fixed;
     left: 0rpx;
     top: 150rpx;
     width: 100%;
     height: 1000rpx;
     box-sizing: border-box;
-    visibility: hidden;
+    /*visibility: hidden;*/
+  }
+  .test {
+    position: absolute;
+    z-index: -1;
   }
 </style>
