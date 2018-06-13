@@ -1,8 +1,11 @@
 <template>
   <div class="container">
+    <div class="button-wrapper">
+       <cover-view class="button blue-button" @click="saveHanlder">保存图片</cover-view>
+       <cover-view class="button yellow-button" @click="goShareHandler">绘制新图片</cover-view>
+    </div>
     <canvas canvas-id="myCanvas" style="width: 100%; height: 500px;" class="test"></canvas>
-    <cover-view class="button" @click="share">share</cover-view>
-    <!--<button open-type="getUserInfo" lang="zh_CN" @getuserinfo="goShare">获取用户信息</button>-->
+
   </div>
 </template>
 
@@ -12,49 +15,75 @@ import card from '@/components/card'
 export default {
   data() {
     return {
-      isShow: false,
+      sizeInfo: {
+        windowWidth: 0, // 屏幕可用宽度
+        backgroundHeight: 0, // 背景图高度
+        canvasHeight: 588, // canvas高度
+        fontSizeRatio: 1, // 字体大小修正系数
+        screenRatio: 1, // 屏幕尺寸系数（以375为基准）
+      },
       filePath: '',
     }
   },
   computed: {
-    test() {
-      return this.number + 100
-    }
+    // 屏幕中心X轴坐标
+    centerPositionX() {
+      return this.sizeInfo.windowWidth / 2;
+    },
+    // 文字最大宽度
+    maxTextWidth() {
+      const ratio = 0.8;
+      return this.sizeInfo.windowWidth * ratio;
+    },
   },
-
-  components: {
-    card
-  },
-
   mounted() {
     const self = this;
-    self.isShow = true;
+    wx.showLoading({
+      title: '图片生成中',
+      mask: true
+    });
+    // 同步获取系统信息
+    const systemInfo = wx.getSystemInfoSync();
+    // 获取屏幕宽度
+    self.sizeInfo.windowWidth = systemInfo.windowWidth;
+    // 如果是小尺寸机型，缩小字体大小
+    if (self.sizeInfo.windowWidth < 375) {
+      self.sizeInfo.fontSizeRatio = 0.8;
+    }
+    // 绘制canvas
     self.getCanvas();
   },
+
   methods: {
-    share() {
-      console.log(1);
+    // 保存当前图片
+    saveHanlder() {
       const self = this;
       wx.showLoading({
-        title: '图片生成中',
+        title: '图片保存中',
         mask: true
       });
-      self.getCanvas();
+      // 保存图片到系统相册。
+      wx.saveImageToPhotosAlbum({
+        filePath: self.filePath,
+        success() {
+          wx.hideLoading();
+          wx.showToast({
+            title: '图片保存成功',
+            icon: 'success'
+          })
+        },
+        fail(res) {
+          console.log(res.errMsg);
+          wx.hideLoading();
+        },
+      })
     },
 
-    goShare(e) {
-      // mpVue中获取detail
-      const detail = e.mp.detail;
-
-      // 如果用户拒接授权
-      if (!detail.userInfo) {
-        return;
-      }
-
-      // 用户信息
-      console.log(detail.userInfo);
+    // 绘制新图片
+    goShareHandler() {
+      const info = new Date().toLocaleString();
       wx.navigateTo({
-        url: `/pages/share/main?userInfo=${JSON.stringify(detail.userInfo)}`
+        url: `/pages/share/main?info=${info}`
       })
     },
 
@@ -62,34 +91,19 @@ export default {
     getCanvas() {
       const self = this;
 
-      // 获取设备宽度等信息
-      const systemInfo = wx.getSystemInfoSync();
-      const deciveWidth = systemInfo.screenWidth;
-
       // 设定相对宽度等信息
-      const left = (deciveWidth - 200) / 2;
+      const left = (self.sizeInfo.windowWidth - 200) / 2;
 
       // 创建画布
       const ctx = wx.createCanvasContext('myCanvas');
 
       // 绘制头像
-      // 保存画布
-      ctx.save();
-      ctx.beginPath();
-      // 圆心中点
-      const circleX = deciveWidth/2;
-      const circleY = 80;
-      // 圆半径
-      const circleRadius = 50;
-      ctx.arc(circleX, circleY, circleRadius, 0, 2 * Math.PI);
-      // 剪切
-      ctx.clip();
-      // 绘制图片
-      const imgPath = '/static/1.jpg';
-      ctx.drawImage(imgPath, circleX - circleRadius, circleY - circleRadius, circleRadius * 2, circleRadius * 2);
-      // 恢复画布
-      ctx.restore();
-
+      const avatarPath = '/static/1.jpg';
+      const avatarParam = {
+        y: 80,
+        r: 50
+      };
+      self.drawAvatar(ctx, avatarPath, avatarParam);
 
       // 绘制空心矩形
       ctx.beginPath();
@@ -102,115 +116,172 @@ export default {
       ctx.setFontSize(18);
       ctx.setFillStyle('#6F6F6F');
       ctx.setTextAlign('left');
-      const text = '义可就不一样了，表示最大需要换行的宽度，此参数可缺省，默认会使用canvas画布';
-      this.fillTextWrap(ctx, text, left, 200, 190, 30);
+      const text = '写完《我的古典音乐启蒙曲》后，一直再想参与一个新的话题，然而，可能我的生活太狭窄了，除了“音乐”“练琴”再放不下别的有趣的事了';
+      const textParam = {
+        x: left,
+        y: 200,
+        lineHeight: 30,
+        textAlign: 'left',
+        maxWidth: 190,
+      };
+      this.drawTextMultiple(ctx, text, textParam);
 
       // 绘制网络图片
       const imgPath2 = 'https://mmbiz.qpic.cn/mmbiz_jpg/DCI1x4FsN5q1Fxmq7L67l3jYQABcCAp7rPOXsebdcDhjruX83OvmC0tAWqJanUG3n0eJibOtNAq1gJJbBFkYfXw/640';
-      console.log(123);
-       wx.getImageInfo({
-         src: imgPath2,
-         success(res) {
-           ctx.drawImage(res.path, left, 320, 200, 150);
-           // 全部绘制
-           ctx.draw(false, function () {
-             // wx.canvasToTempFilePath({
-             //   canvasId: 'myCanvas',
-             //   fileType: 'jpg',
-             //   success: function(res) {
-             //     // 获得图片临时路径
-             //     self.filePath = res.tempFilePath;
-             //     wx.saveImageToPhotosAlbum({
-             //       filePath: self.filePath,
-             //       success(res) {
-             //         console.log(self.filePath);
-             //         wx.hideLoading();
-             //         wx.showToast({
-             //           title: '图片保存成功',
-             //           icon: 'success'
-             //         })
-             //       },
-             //       fail(res) {
-             //         console.log(res.errMsg);
-             //         wx.hideLoading();
-             //       },
-             //     })
-             //   }
-             // })
-           });
-         },
-         fail(res) {
-           console.log(res)
-         }
-        });
+
+      // 获取图片临时路径
+      wx.getImageInfo({
+        src: imgPath2,
+        success(res) {
+          ctx.drawImage(res.path, left, 320, 200, 150);
+          ctx.draw(false, function () {
+            wx.canvasToTempFilePath({
+              canvasId: 'myCanvas',
+              fileType: 'jpg',
+              success: function (res) {
+                // 获得图片临时路径
+                self.filePath = res.tempFilePath;
+              }
+            })
+          });
+        },
+        fail(res) {
+          console.log(res)
+        },
+        complete() {
+          wx.hideLoading();
+        }
+      });
     },
 
-    // 文字换行
-    fillTextWrap(ctx, text, x, y, maxWidth, lineHeight) {
-      // 设定默认最大宽度
-      const systemInfo = wx.getSystemInfoSync();
-      const deciveWidth = systemInfo.screenWidth;
 
-      // 默认参数
-      maxWidth = maxWidth || deciveWidth;
-      lineHeight = lineHeight || 20;
+    /**
+     * 绘制头像
+     * @param ctx canvas环境
+     * @param path 头像路径
+     * @param x 圆心坐标（默认值为屏幕中央）
+     * @param y 圆心坐标
+     * @param r 头像半径
+     */
+    drawAvatar(ctx, path, {x = this.centerPositionX, y, r = 30 }) {
+      // 保存画布
+      ctx.save();
+      ctx.beginPath();
+      // 起始弧度，在3点钟方向
+      const sAngle = 0;
+      // 终止弧度
+      const eAngle = 2 * Math.PI;
+      // 圆半径
+      ctx.arc(x, y, r, sAngle, eAngle);
+      // 剪切
+      ctx.clip();
+      // 绘制图片
+      ctx.drawImage(path, x - r, y - r, r * 2, r * 2);
+      // 恢复画布
+      ctx.restore();
+      return y + r;
+    },
 
+    /**
+     * 绘制文字（可自动换行）
+     * @param ctx canvas环境
+     * @param text 要绘制的文字
+     * @param x 文字X轴坐标（默认值为屏幕中央）
+     * @param y 文字Y轴坐
+     * @param maxWidth 最大宽度（默认为屏幕宽度*0.8）
+     * @param maxLines 最大绘制行数（默认为100, 等于1时为单行绘制）
+     * @param lineHeight 行间距（默认为20）
+     * @param fontSize 文字字体大小（默认为12）
+     * @param color 文字颜色（默认为#666）
+     * @param textAlign 文字对齐方式（默认居中）
+     * @param fontWeight 字体粗细。仅支持 normal, bold（默认normal）
+     */
+    drawTextMultiple(ctx, text, { x = this.centerPositionX, y, maxWidth = this.maxTextWidth, maxLines = 100, lineHeight = 20, fontSize = 12, color = '#666', textAlign = 'center', fontWeight = 'normal' }) {
       // 校验参数
       if (typeof text !== 'string' || typeof x !== 'number' || typeof y !== 'number') {
-        return;
+        throw new Error('绘制文字失败');
       }
+
+      // 设置字体、颜色、对齐方式
+      const fontFamily = 'Helvetica, Tahoma, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+      ctx.font = `${fontSize}px ${fontWeight} ${fontFamily}`;
+      ctx.setFillStyle(color);
+      ctx.setTextAlign(textAlign);
 
       // 字符串分割为数组
       const arrText = text.split('');
+
       // 当前字符串及宽度
       let currentText = '';
       let currentWidth;
+      // 当前行数
+      let currentLine = 0;
 
-      for (let letter of arrText) {
-        currentText += letter;
+      // 单行绘制（能够节省性能，但是如果文字字数过多的情况下文字会被压缩）
+      // if (maxLines === 1) {
+      //   ctx.fillText(text, x, y, maxWidth);
+      //   y += lineHeight;
+      //   return y;
+      // }
+
+      // 对数组进行循环截取（可控制测试间隔）
+      const interval = 1;
+      for (let i = 0; i < arrText.length; i += interval) {
+        currentText += arrText.slice(i, i + interval).join('');
         currentWidth = ctx.measureText(currentText).width;
         if (currentWidth > maxWidth) {
           ctx.fillText(currentText, x, y);
           currentText = '';
           y += lineHeight;
+          currentLine += 1;
+          // 如果已绘制的行数已达到限定绘制行数，后续文字放弃绘制
+          if (maxLines && currentLine >= maxLines) {
+            break;
+          }
         }
       }
-      if (currentText) {
+
+      // 剩余不足一行的文字，如果不限定最大绘制行数或者未达到最大绘制行数
+      if (currentText && (!maxLines || currentLine <= maxLines)) {
         ctx.fillText(currentText, x, y);
+        y += lineHeight;
+        currentLine += 1;
       }
+      return y;
     },
+
 
   },
 }
 </script>
 
 <style scoped>
-  .button {
-    margin-top: -200rpx;
-    position: fixed;
-    left: 0;
+  .button-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 100%;
-    background: red;
-    bottom: 300rpx;
-    z-index: 120;
+    box-sizing: border-box;
+    margin-bottom: 20rpx;
+  }
+  .button {
+    width: 50%;
+    padding: 25rpx;
     text-align: center;
+  }
+  .blue-button {
+    background: cadetblue;
+  }
+  .yellow-button {
+    background: yellowgreen;
   }
   .button2 {
     margin-top: 100rpx;
     padding: 10rpx 50rpx;
   }
-  .wrapper {
-    z-index: 10;
-    position: fixed;
-    left: 0rpx;
-    top: 150rpx;
-    width: 100%;
-    height: 1000rpx;
-    box-sizing: border-box;
-    /*visibility: hidden;*/
-  }
   .test {
-    position: absolute;
-    z-index: -1;
+    box-sizing: border-box;
+    background: #fff;
+    border: 15rpx solid grey;
   }
 </style>
