@@ -1,10 +1,9 @@
 <template>
   <div class="container">
     <div class="button-wrapper">
-       <cover-view class="button blue-button" @click="saveHanlder">保存图片</cover-view>
+       <cover-view class="button blue-button" @tap="saveHanlder">保存图片</cover-view>
     </div>
-    <canvas canvas-id="myCanvas" style="width: 100%; height: 400px;" class="test"></canvas>
-
+    <canvas canvas-id="myCanvas" style="width: 100%; height: 400px;" class="test" @tap="previewHandler"></canvas>
   </div>
 </template>
 
@@ -65,29 +64,69 @@ export default {
         title: '图片保存中',
         mask: true
       });
-      // 保存图片到系统相册。
-      wx.saveImageToPhotosAlbum({
-        filePath: self.filePath,
-        success() {
-          wx.hideLoading();
-          wx.showToast({
-            title: '图片保存成功',
-            icon: 'success'
-          })
-        },
-        fail(res) {
-          console.log(res.errMsg);
-          wx.hideLoading();
-        },
-      })
+      if (self.filePath) {
+        // 保存图片到系统相册。
+        wx.saveImageToPhotosAlbum({
+          filePath: self.filePath,
+          success() {
+            wx.hideLoading();
+            wx.showToast({
+              title: '图片保存成功',
+              icon: 'success'
+            })
+          },
+          fail(res) {
+            console.log(res.errMsg);
+            wx.hideLoading();
+          },
+        })
+      } else {
+        wx.canvasToTempFilePath({
+          canvasId: 'myCanvas',
+          fileType: 'jpg',
+          success: function (res) {
+            // 获得图片临时路径
+            self.filePath = res.tempFilePath;
+            // 保存图片到系统相册。
+            wx.saveImageToPhotosAlbum({
+              filePath: self.filePath,
+              success() {
+                wx.hideLoading();
+                wx.showToast({
+                  title: '图片保存成功',
+                  icon: 'success'
+                })
+              },
+              fail(res) {
+                console.log(res.errMsg);
+                wx.hideLoading();
+              },
+            })
+          }
+        });
+      }
     },
 
-    // 绘制新图片
-    goShareHandler() {
-      const info = new Date().toLocaleString();
-      wx.navigateTo({
-        url: `/pages/share/main?info=${info}`
-      })
+    // 预览图片
+    previewHandler() {
+      const self = this;
+      if(self.filePath) {
+        wx.previewImage({
+          urls: [self.filePath]
+        });
+      } else {
+        wx.canvasToTempFilePath({
+          canvasId: 'myCanvas',
+          fileType: 'jpg',
+          success: function (res) {
+            // 获得图片临时路径
+            self.filePath = res.tempFilePath;
+            wx.previewImage({
+              urls: [self.filePath]
+            });
+          }
+        });
+      }
     },
 
     // 生成Canvas
@@ -145,16 +184,7 @@ export default {
         src: imgPath2,
         success(res) {
           ctx.drawImage(res.path, left, 220, 200, 150);
-          ctx.draw(false, function () {
-            wx.canvasToTempFilePath({
-              canvasId: 'myCanvas',
-              fileType: 'jpg',
-              success: function (res) {
-                // 获得图片临时路径
-                self.filePath = res.tempFilePath;
-              }
-            })
-          });
+          ctx.draw(false, function () {});
         },
         fail(res) {
           console.log(res)
@@ -260,8 +290,6 @@ export default {
       }
       return y;
     },
-
-
   },
 }
 </script>
