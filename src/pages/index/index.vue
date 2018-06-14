@@ -10,7 +10,6 @@
 </template>
 
 <script>
-import card from '@/components/card'
 
 export default {
   data() {
@@ -127,7 +126,7 @@ export default {
       this.drawTextMultiple(ctx, text, textParam);
 
       // 绘制网络图片
-      const imgPath2 = 'https://mmbiz.qpic.cn/mmbiz_jpg/DCI1x4FsN5q1Fxmq7L67l3jYQABcCAp7rPOXsebdcDhjruX83OvmC0tAWqJanUG3n0eJibOtNAq1gJJbBFkYfXw/640';
+      const imgPath2 = 'https://wx.qlogo.cn/mmopen/vi_32/DYAIOgq83erFT3NNAGfQNKxlVt3gvbic2bTwGxsyRLBZkqxJDLtPFapfMFdSibtvp4uhT87Sia4pBXRtTibWibnkwzw/132';
 
       // 获取图片临时路径
       wx.getImageInfo({
@@ -265,8 +264,11 @@ export default {
     margin-bottom: 20rpx;
   }
   .button {
+    box-sizing: border-box;
     width: 50%;
-    padding: 25rpx;
+    height: 100rpx;
+    line-height: 100rpx;
+    color: yellow;
     text-align: center;
   }
   .blue-button {
@@ -274,10 +276,6 @@ export default {
   }
   .yellow-button {
     background: yellowgreen;
-  }
-  .button2 {
-    margin-top: 100rpx;
-    padding: 10rpx 50rpx;
   }
   .test {
     box-sizing: border-box;

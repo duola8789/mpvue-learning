@@ -56,6 +56,10 @@ export default {
     self.getCanvas();
   },
 
+  onUnload() {
+    this.filePath = '';
+  },
+
   methods: {
     // 保存当前图片
     saveHanlder() {
@@ -177,7 +181,7 @@ export default {
       this.drawTextMultiple(ctx, '点击图片进行预览', textParam2);
 
       // 绘制网络图片
-      const imgPath2 = 'https://mmbiz.qpic.cn/mmbiz_jpg/DCI1x4FsN5q1Fxmq7L67l3jYQABcCAp7rPOXsebdcDhjruX83OvmC0tAWqJanUG3n0eJibOtNAq1gJJbBFkYfXw/640';
+      const imgPath2 = 'https://wx.qlogo.cn/mmopen/vi_32/DYAIOgq83erFT3NNAGfQNKxlVt3gvbic2bTwGxsyRLBZkqxJDLtPFapfMFdSibtvp4uhT87Sia4pBXRtTibWibnkwzw/132';
 
       // 获取图片临时路径
       wx.getImageInfo({
@@ -308,7 +312,8 @@ export default {
   }
   .button {
     width: 100%;
-    padding: 25rpx;
+    height: 100rpx;
+    line-height: 100rpx;
     text-align: center;
   }
   .blue-button {
