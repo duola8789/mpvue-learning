@@ -2,7 +2,7 @@
   "name": "mvvue-learning",
   "version": "1.0.0",
   "description": "A Mpvue project",
-  "author": "周昊 <zhouhao1@corp.netease.com>",
+  "author": "duola",
   "private": true,
   "scripts": {
     "dev": "node build/dev-server.js",
